@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import ImageUploadSection from '@/components/lash/ImageUploadSection';
+import ParametersPanel from '@/components/lash/ParametersPanel';
+import EffectsGallery from '@/components/lash/EffectsGallery';
+import SavedVariantsGallery from '@/components/lash/SavedVariantsGallery';
 
 interface LashEffect {
   id: string;
@@ -206,458 +204,45 @@ export default function Index() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
-          <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up">
-            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <Icon name="Upload" className="text-primary" />
-              Загрузите фото глаз
-            </h2>
-            
-            {!uploadedImage ? (
-              <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                className={`border-3 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
-                  isDragging 
-                    ? 'border-primary bg-primary/5 scale-105' 
-                    : 'border-gray-300 hover:border-primary/50'
-                }`}
-              >
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
-                    <Icon name="Image" size={40} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-medium mb-2">
-                      Перетащите фото сюда
-                    </p>
-                    <p className="text-sm text-gray-500 mb-4">
-                      или нажмите кнопку ниже
-                    </p>
-                  </div>
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <Button 
-                      type="button"
-                      className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                      asChild
-                    >
-                      <span>
-                        <Icon name="Upload" className="mr-2" size={20} />
-                        Выбрать фото
-                      </span>
-                    </Button>
-                  </label>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg">
-                    <img 
-                      src={uploadedImage} 
-                      alt="Original" 
-                      className="w-full h-auto"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-                    <Badge className="absolute top-4 left-4 bg-white/90 text-gray-700">
-                      <Icon name="Image" size={16} className="mr-1" />
-                      Оригинал
-                    </Badge>
-                  </div>
-                  
-                  {processedImage && (
-                    <div className="relative rounded-2xl overflow-hidden shadow-lg animate-fade-in">
-                      <img 
-                        src={processedImage} 
-                        alt="Processed" 
-                        className="w-full h-auto"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-                      <Badge className="absolute top-4 left-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-                        <Icon name="Sparkles" size={16} className="mr-1" />
-                        С наращиванием
-                      </Badge>
-                    </div>
-                  )}
-                </div>
+          <ImageUploadSection
+            uploadedImage={uploadedImage}
+            processedImage={processedImage}
+            isDragging={isDragging}
+            isProcessing={isProcessing}
+            handleDrop={handleDrop}
+            handleDragOver={handleDragOver}
+            handleDragLeave={handleDragLeave}
+            handleFileUpload={handleFileUpload}
+            processImageWithAI={processImageWithAI}
+            setUploadedImage={setUploadedImage}
+            setProcessedImage={setProcessedImage}
+          />
 
-                <div className="flex gap-2">
-                  <Button 
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                    onClick={processImageWithAI}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Icon name="Loader2" className="mr-2 animate-spin" size={20} />
-                        Обработка...
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="Wand2" className="mr-2" size={20} />
-                        Примерить эффект
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setUploadedImage(null);
-                      setProcessedImage(null);
-                    }}
-                  >
-                    <Icon name="RefreshCw" size={20} />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <Icon name="Sparkles" className="text-primary" />
-              Параметры наращивания
-            </h2>
-
-            <Tabs defaultValue="volume" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
-                <TabsTrigger value="volume">Объем</TabsTrigger>
-                <TabsTrigger value="curl">Изгиб</TabsTrigger>
-                <TabsTrigger value="length">Длина</TabsTrigger>
-                <TabsTrigger value="color">Цвет</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="volume" className="space-y-4">
-                <div className="grid grid-cols-5 gap-2">
-                  {volumes.map((vol) => (
-                    <Button
-                      key={vol}
-                      variant={params.volume === vol ? 'default' : 'outline'}
-                      className={`transition-all ${
-                        params.volume === vol 
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105' 
-                          : 'hover:scale-105'
-                      }`}
-                      onClick={() => setParams({ ...params, volume: vol })}
-                    >
-                      {vol}
-                    </Button>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-600">
-                  Чем выше объем, тем пышнее будут ресницы
-                </p>
-              </TabsContent>
-
-              <TabsContent value="curl" className="space-y-4">
-                <div className="grid grid-cols-4 gap-2">
-                  {curls.map((curl) => (
-                    <Button
-                      key={curl}
-                      variant={params.curl === curl ? 'default' : 'outline'}
-                      className={`transition-all ${
-                        params.curl === curl 
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105' 
-                          : 'hover:scale-105'
-                      }`}
-                      onClick={() => setParams({ ...params, curl })}
-                    >
-                      {curl}
-                    </Button>
-                  ))}
-                </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p><strong>C</strong> — легкий изгиб</p>
-                  <p><strong>D</strong> — средний изгиб</p>
-                  <p><strong>L</strong> — сильный изгиб</p>
-                  <p><strong>M</strong> — максимальный изгиб</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="length" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Длина ресниц</span>
-                    <Badge variant="secondary" className="text-lg">
-                      {params.length} мм
-                    </Badge>
-                  </div>
-                  <Slider
-                    value={[params.length]}
-                    onValueChange={([value]) => setParams({ ...params, length: value })}
-                    min={6}
-                    max={15}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>6 мм</span>
-                    <span>15 мм</span>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600">
-                  Оптимальная длина: 10-12 мм для естественного эффекта
-                </p>
-              </TabsContent>
-
-              <TabsContent value="color" className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {lashColors.map((color) => (
-                    <Button
-                      key={color.id}
-                      variant={params.color === color.id ? 'default' : 'outline'}
-                      className={`transition-all h-auto py-3 ${
-                        params.color === color.id 
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105 ring-2 ring-primary' 
-                          : 'hover:scale-105'
-                      }`}
-                      onClick={() => setParams({ ...params, color: color.id })}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-6 h-6 rounded-full border-2 border-gray-300"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <span>{color.name}</span>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-600">
-                  Черный — классика, коричневый — для натурального образа, цветные — для яркого акцента
-                </p>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl">
-              <div className="flex items-start gap-3">
-                <Icon name="Info" className="text-primary mt-1" size={20} />
-                <div className="text-sm text-gray-700">
-                  <p className="font-medium mb-1">Текущие параметры:</p>
-                  <p>Объем: <strong>{params.volume}</strong> • Изгиб: <strong>{params.curl}</strong> • Длина: <strong>{params.length} мм</strong> • Цвет: <strong>{lashColors.find(c => c.id === params.color)?.name || params.color}</strong></p>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <ParametersPanel
+            params={params}
+            setParams={setParams}
+            volumes={volumes}
+            curls={curls}
+            lashColors={lashColors}
+          />
         </div>
 
-        <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-            <Icon name="Wand2" className="text-primary" />
-            Каталог эффектов наращивания
-          </h2>
+        <EffectsGallery
+          lashEffects={lashEffects}
+          selectedEffect={selectedEffect}
+          setSelectedEffect={setSelectedEffect}
+        />
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lashEffects.map((effect, index) => (
-              <Card
-                key={effect.id}
-                className={`p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 animate-scale-in ${
-                  selectedEffect === effect.id
-                    ? 'ring-2 ring-primary bg-gradient-to-br from-pink-50 to-purple-50'
-                    : 'hover:bg-accent/50'
-                }`}
-                style={{ animationDelay: `${index * 0.05}s` }}
-                onClick={() => {
-                  setSelectedEffect(effect.id);
-                  toast.success(`Выбран эффект: ${effect.name} ✨`);
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-4xl">{effect.preview}</div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">{effect.name}</h3>
-                    <p className="text-sm text-gray-600">{effect.description}</p>
-                  </div>
-                  {selectedEffect === effect.id && (
-                    <Icon name="Check" className="text-primary" size={24} />
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </Card>
-
-        {processedImage && (
-          <div className="mt-8 flex justify-center gap-4 animate-fade-in">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg"
-              onClick={() => {
-                const link = document.createElement('a');
-                link.href = processedImage;
-                link.download = `lash-effect-${selectedEffect}.png`;
-                link.click();
-                toast.success('Результат сохранен! 💾');
-              }}
-            >
-              <Icon name="Download" className="mr-2" />
-              Скачать результат
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={processImageWithAI}
-              disabled={isProcessing}
-            >
-              <Icon name="RefreshCw" className="mr-2" />
-              Пересчитать
-            </Button>
-          </div>
-        )}
-
-        {savedVariants.length > 0 && (
-          <Card className="mt-8 p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <Icon name="Gallery" className="text-primary" />
-                Сохраненные варианты ({savedVariants.length})
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant={compareMode ? "default" : "outline"}
-                  onClick={() => {
-                    setCompareMode(!compareMode);
-                    setSelectedForCompare([]);
-                  }}
-                  className={compareMode ? "bg-gradient-to-r from-pink-500 to-purple-500" : ""}
-                >
-                  <Icon name="ArrowLeftRight" className="mr-2" size={20} />
-                  {compareMode ? 'Выйти из сравнения' : 'Сравнить'}
-                </Button>
-              </div>
-            </div>
-
-            {!compareMode ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {savedVariants.map((variant, index) => (
-                  <Card 
-                    key={variant.id}
-                    className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 animate-scale-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="relative">
-                      <img 
-                        src={variant.image} 
-                        alt={variant.effectName}
-                        className="w-full h-48 object-cover"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-                        {variant.effectName}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="absolute top-2 right-2"
-                        onClick={() => deleteVariant(variant.id)}
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
-                    </div>
-                    <div className="p-3 space-y-2">
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <p><strong>Объем:</strong> {variant.params.volume}</p>
-                        <p><strong>Изгиб:</strong> {variant.params.curl}</p>
-                        <p><strong>Длина:</strong> {variant.params.length} мм</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = variant.image;
-                          link.download = `${variant.effectName}-${variant.id}.png`;
-                          link.click();
-                          toast.success('Скачано!');
-                        }}
-                      >
-                        <Icon name="Download" size={16} className="mr-2" />
-                        Скачать
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Выберите до 3 вариантов для сравнения (выбрано: {selectedForCompare.length})
-                </p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-                  {savedVariants.map((variant) => (
-                    <Card 
-                      key={variant.id}
-                      className={`overflow-hidden cursor-pointer transition-all duration-300 ${
-                        selectedForCompare.includes(variant.id)
-                          ? 'ring-4 ring-primary scale-105'
-                          : 'hover:shadow-lg hover:scale-105'
-                      }`}
-                      onClick={() => toggleCompareSelection(variant.id)}
-                    >
-                      <div className="relative">
-                        <img 
-                          src={variant.image} 
-                          alt={variant.effectName}
-                          className="w-full h-32 object-cover"
-                        />
-                        <Badge className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-                          {variant.effectName}
-                        </Badge>
-                        {selectedForCompare.includes(variant.id) && (
-                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                            <Icon name="Check" size={32} className="text-white" />
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-
-                {selectedForCompare.length > 0 && (
-                  <Card className="p-6 bg-gradient-to-br from-pink-50 to-purple-50">
-                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <Icon name="Eye" className="text-primary" />
-                      Сравнение выбранных вариантов
-                    </h3>
-                    <div className={`grid ${selectedForCompare.length === 1 ? 'grid-cols-1' : selectedForCompare.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-4`}>
-                      {selectedForCompare.map(variantId => {
-                        const variant = savedVariants.find(v => v.id === variantId);
-                        if (!variant) return null;
-                        return (
-                          <div key={variant.id} className="space-y-2">
-                            <img 
-                              src={variant.image} 
-                              alt={variant.effectName}
-                              className="w-full rounded-lg shadow-lg"
-                            />
-                            <div className="text-center">
-                              <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white mb-2">
-                                {variant.effectName}
-                              </Badge>
-                              <div className="text-xs text-gray-600">
-                                <p>{variant.params.volume} • {variant.params.curl} • {variant.params.length}мм</p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            )}
-          </Card>
-        )}
+        <SavedVariantsGallery
+          savedVariants={savedVariants}
+          compareMode={compareMode}
+          selectedForCompare={selectedForCompare}
+          setCompareMode={setCompareMode}
+          setSelectedForCompare={setSelectedForCompare}
+          toggleCompareSelection={toggleCompareSelection}
+          deleteVariant={deleteVariant}
+          processedImage={processedImage}
+        />
       </div>
     </div>
   );
