@@ -225,10 +225,16 @@ export default function Index() {
                       или нажмите кнопку ниже
                     </p>
                   </div>
-                  <label htmlFor="file-upload">
-                    <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
-                      <Icon name="Upload" className="mr-2" size={20} />
-                      Выбрать фото
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <Button 
+                      type="button"
+                      className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                      asChild
+                    >
+                      <span>
+                        <Icon name="Upload" className="mr-2" size={20} />
+                        Выбрать фото
+                      </span>
                     </Button>
                   </label>
                   <input
