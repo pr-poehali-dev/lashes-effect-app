@@ -18,6 +18,7 @@ interface LashParams {
   volume: string;
   curl: string;
   length: number;
+  color: string;
 }
 
 interface SavedVariant {
@@ -70,6 +71,13 @@ const lashEffects: LashEffect[] = [
 
 const volumes = ['2D', '3D', '4D', '5D', '6D'];
 const curls = ['C', 'D', 'L', 'M'];
+const lashColors = [
+  { id: 'black', name: 'Черный', hex: '#000000' },
+  { id: 'brown', name: 'Коричневый', hex: '#3E2723' },
+  { id: 'blue', name: 'Синий', hex: '#1565C0' },
+  { id: 'purple', name: 'Фиолетовый', hex: '#6A1B9A' },
+  { id: 'green', name: 'Зеленый', hex: '#2E7D32' }
+];
 
 export default function Index() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -78,7 +86,8 @@ export default function Index() {
   const [params, setParams] = useState<LashParams>({
     volume: '3D',
     curl: 'D',
-    length: 10
+    length: 10,
+    color: 'black'
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -135,7 +144,8 @@ export default function Index() {
           effect: selectedEffect,
           volume: params.volume,
           curl: params.curl,
-          length: params.length
+          length: params.length,
+          color: params.color
         })
       });
 
@@ -320,10 +330,11 @@ export default function Index() {
             </h2>
 
             <Tabs defaultValue="volume" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsList className="grid w-full grid-cols-4 mb-6">
                 <TabsTrigger value="volume">Объем</TabsTrigger>
                 <TabsTrigger value="curl">Изгиб</TabsTrigger>
                 <TabsTrigger value="length">Длина</TabsTrigger>
+                <TabsTrigger value="color">Цвет</TabsTrigger>
               </TabsList>
 
               <TabsContent value="volume" className="space-y-4">
@@ -398,6 +409,34 @@ export default function Index() {
                   Оптимальная длина: 10-12 мм для естественного эффекта
                 </p>
               </TabsContent>
+
+              <TabsContent value="color" className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {lashColors.map((color) => (
+                    <Button
+                      key={color.id}
+                      variant={params.color === color.id ? 'default' : 'outline'}
+                      className={`transition-all h-auto py-3 ${
+                        params.color === color.id 
+                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105 ring-2 ring-primary' 
+                          : 'hover:scale-105'
+                      }`}
+                      onClick={() => setParams({ ...params, color: color.id })}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-6 h-6 rounded-full border-2 border-gray-300"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-600">
+                  Черный — классика, коричневый — для натурального образа, цветные — для яркого акцента
+                </p>
+              </TabsContent>
             </Tabs>
 
             <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl">
@@ -405,7 +444,7 @@ export default function Index() {
                 <Icon name="Info" className="text-primary mt-1" size={20} />
                 <div className="text-sm text-gray-700">
                   <p className="font-medium mb-1">Текущие параметры:</p>
-                  <p>Объем: <strong>{params.volume}</strong> • Изгиб: <strong>{params.curl}</strong> • Длина: <strong>{params.length} мм</strong></p>
+                  <p>Объем: <strong>{params.volume}</strong> • Изгиб: <strong>{params.curl}</strong> • Длина: <strong>{params.length} мм</strong> • Цвет: <strong>{lashColors.find(c => c.id === params.color)?.name || params.color}</strong></p>
                 </div>
               </div>
             </div>

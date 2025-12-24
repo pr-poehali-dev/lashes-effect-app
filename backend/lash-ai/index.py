@@ -48,6 +48,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         volume = body_data.get('volume', '3D')
         curl = body_data.get('curl', 'D')
         length = int(body_data.get('length', 10))
+        color = body_data.get('color', 'black')
         
         if not image_base64:
             return {
@@ -74,7 +75,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             effect=effect,
             volume=volume,
             curl=curl,
-            length=length
+            length=length,
+            color=color
         )
         
         output_buffer = io.BytesIO()
@@ -97,7 +99,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'parameters': {
                     'volume': volume,
                     'curl': curl,
-                    'length': length
+                    'length': length,
+                    'color': color
                 }
             }),
             'isBase64Encoded': False
@@ -159,7 +162,7 @@ def draw_curved_lash(
     '''
     Рисует одну изогнутую ресничку с плавным переходом
     '''
-    segments = 8
+    segments = 10
     points = []
     
     for i in range(segments + 1):
@@ -168,15 +171,59 @@ def draw_curved_lash(
         curve_x = start_x + length * t * math.cos(math.radians(angle))
         curve_y = start_y - length * t * math.sin(math.radians(angle))
         
-        curl_offset = curl_factor * math.sin(t * math.pi) * length * 0.15
+        curl_offset = curl_factor * math.sin(t * math.pi) * length * 0.2
         curve_x += curl_offset * math.cos(math.radians(angle + 90))
         curve_y -= curl_offset * math.sin(math.radians(angle + 90))
         
         points.append((int(curve_x), int(curve_y)))
     
     for i in range(len(points) - 1):
-        segment_thickness = max(1, int(thickness * (1 - i / segments)))
+        segment_thickness = max(1, int(thickness * (1 - i / (segments * 1.2))))
         draw.line([points[i], points[i + 1]], fill=color, width=segment_thickness)
+
+
+def get_color_palette(color_id: str) -> List[Tuple[int, int, int, int]]:
+    '''
+    Возвращает палитру цветов для ресниц с вариациями
+    '''
+    palettes = {
+        'black': [
+            (10, 10, 10, 200),
+            (15, 15, 15, 195),
+            (20, 20, 20, 190),
+            (25, 25, 25, 185),
+            (5, 5, 5, 205)
+        ],
+        'brown': [
+            (62, 39, 35, 200),
+            (70, 45, 40, 195),
+            (55, 35, 30, 190),
+            (78, 52, 46, 185),
+            (50, 30, 25, 205)
+        ],
+        'blue': [
+            (21, 101, 192, 200),
+            (25, 118, 210, 195),
+            (13, 71, 161, 190),
+            (30, 136, 229, 185),
+            (10, 50, 120, 205)
+        ],
+        'purple': [
+            (106, 27, 154, 200),
+            (123, 31, 162, 195),
+            (74, 20, 140, 190),
+            (142, 36, 170, 185),
+            (81, 45, 168, 205)
+        ],
+        'green': [
+            (46, 125, 50, 200),
+            (56, 142, 60, 195),
+            (27, 94, 32, 190),
+            (67, 160, 71, 185),
+            (20, 70, 25, 205)
+        ]
+    }
+    return palettes.get(color_id, palettes['black'])
 
 
 def apply_lash_effect(
@@ -184,7 +231,8 @@ def apply_lash_effect(
     effect: str,
     volume: str,
     curl: str,
-    length: int
+    length: int,
+    color: str
 ) -> Image.Image:
     '''
     Применяет реалистичный эффект наращивания ресниц к изображению
@@ -196,41 +244,79 @@ def apply_lash_effect(
     volume_num = int(volume[0]) if volume[0].isdigit() else 3
     
     effect_params = {
-        'classic': {'density': 1.0, 'length_mult': 1.0, 'volume_mult': 0.8},
-        'volume': {'density': 1.3, 'length_mult': 1.1, 'volume_mult': 1.2},
-        'mega': {'density': 1.8, 'length_mult': 1.2, 'volume_mult': 1.5},
-        'hollywood': {'density': 2.0, 'length_mult': 1.4, 'volume_mult': 1.6},
-        'cat-eye': {'density': 1.4, 'length_mult': 1.2, 'volume_mult': 1.1},
-        'doll': {'density': 1.5, 'length_mult': 1.15, 'volume_mult': 1.3}
+        'classic': {
+            'density': 1.0, 
+            'length_mult': 1.0, 
+            'volume_mult': 0.8,
+            'length_pattern': 'uniform',
+            'spacing': 'regular'
+        },
+        'volume': {
+            'density': 1.4, 
+            'length_mult': 1.15, 
+            'volume_mult': 1.3,
+            'length_pattern': 'wave',
+            'spacing': 'tight'
+        },
+        'mega': {
+            'density': 2.0, 
+            'length_mult': 1.3, 
+            'volume_mult': 1.7,
+            'length_pattern': 'random_full',
+            'spacing': 'very_tight'
+        },
+        'hollywood': {
+            'density': 2.2, 
+            'length_mult': 1.5, 
+            'volume_mult': 1.8,
+            'length_pattern': 'long_dramatic',
+            'spacing': 'very_tight'
+        },
+        'cat-eye': {
+            'density': 1.5, 
+            'length_mult': 1.25, 
+            'volume_mult': 1.2,
+            'length_pattern': 'ascending',
+            'spacing': 'regular'
+        },
+        'doll': {
+            'density': 1.6, 
+            'length_mult': 1.2, 
+            'volume_mult': 1.4,
+            'length_pattern': 'center_peak',
+            'spacing': 'tight'
+        }
     }
     params = effect_params.get(effect, effect_params['classic'])
     
-    curl_angles = {'C': 70, 'D': 75, 'L': 80, 'M': 85}
+    curl_angles = {'C': 68, 'D': 75, 'L': 82, 'M': 88}
     base_angle = curl_angles.get(curl, 75)
     
-    curl_factors = {'C': 0.8, 'D': 1.0, 'L': 1.3, 'M': 1.5}
+    curl_factors = {'C': 0.7, 'D': 1.0, 'L': 1.4, 'M': 1.7}
     curl_factor = curl_factors.get(curl, 1.0)
     
-    base_length = (length / 10.0) * params['length_mult'] * min(width, height) * 0.03
-    base_thickness = max(1, int(2 + volume_num * 0.4 * params['volume_mult']))
+    base_length = (length / 10.0) * params['length_mult'] * min(width, height) * 0.035
+    base_thickness = max(1, int(2.5 + volume_num * 0.5 * params['volume_mult']))
     
-    lash_colors = [
-        (15, 15, 15, 200),
-        (20, 20, 20, 190),
-        (25, 25, 25, 180),
-        (10, 10, 10, 195)
-    ]
+    lash_colors = get_color_palette(color)
+    
+    spacing_factors = {
+        'regular': 1.0,
+        'tight': 0.7,
+        'very_tight': 0.5
+    }
+    spacing_mult = spacing_factors.get(params['spacing'], 1.0)
     
     eye_regions = [
         {
-            'start_x': int(width * 0.25),
-            'end_x': int(width * 0.45),
+            'start_x': int(width * 0.24),
+            'end_x': int(width * 0.46),
             'y': int(height * 0.45),
             'side': 'left'
         },
         {
-            'start_x': int(width * 0.55),
-            'end_x': int(width * 0.75),
+            'start_x': int(width * 0.54),
+            'end_x': int(width * 0.76),
             'y': int(height * 0.45),
             'side': 'right'
         }
@@ -238,26 +324,48 @@ def apply_lash_effect(
     
     for eye_region in eye_regions:
         eye_width = eye_region['end_x'] - eye_region['start_x']
-        base_num_lashes = int(25 * params['density'])
+        base_num_lashes = int(30 * params['density'])
         
         for i in range(base_num_lashes):
             progress = i / base_num_lashes
-            x = eye_region['start_x'] + int(eye_width * progress)
+            
+            x_offset = random.uniform(-spacing_mult, spacing_mult)
+            x = eye_region['start_x'] + int(eye_width * progress) + int(x_offset)
             y = eye_region['y'] + random.randint(-2, 2)
             
-            if effect == 'cat-eye':
-                length_mult = 0.6 + 0.8 * progress
-                angle_offset = (progress - 0.5) * 15
-            elif effect == 'doll':
+            length_pattern = params['length_pattern']
+            
+            if length_pattern == 'uniform':
+                length_mult = 0.85 + random.uniform(0, 0.25)
+            
+            elif length_pattern == 'wave':
+                wave_val = math.sin(progress * math.pi * 3) * 0.2
+                length_mult = 0.8 + wave_val + random.uniform(0, 0.2)
+            
+            elif length_pattern == 'random_full':
+                length_mult = 0.7 + random.uniform(0, 0.6)
+            
+            elif length_pattern == 'long_dramatic':
+                length_mult = 1.0 + random.uniform(0, 0.4)
+            
+            elif length_pattern == 'ascending':
+                length_mult = 0.5 + progress * 1.0 + random.uniform(-0.1, 0.15)
+            
+            elif length_pattern == 'center_peak':
                 center_dist = abs(progress - 0.5)
-                length_mult = 1.2 - center_dist * 0.8
-                angle_offset = (progress - 0.5) * 8
-            elif effect == 'hollywood':
-                length_mult = 0.9 + random.uniform(0, 0.3)
-                angle_offset = (progress - 0.5) * 10
+                length_mult = 1.3 - center_dist * 1.2 + random.uniform(-0.1, 0.15)
+            
             else:
-                length_mult = 0.8 + random.uniform(0, 0.4)
+                length_mult = 0.8 + random.uniform(0, 0.3)
+            
+            if effect == 'cat-eye':
+                angle_offset = (progress - 0.4) * 18
+            elif effect == 'doll':
+                angle_offset = (progress - 0.5) * 10
+            elif effect == 'hollywood':
                 angle_offset = (progress - 0.5) * 12
+            else:
+                angle_offset = (progress - 0.5) * 14
             
             lash_length = base_length * length_mult
             lash_angle = base_angle + angle_offset
@@ -268,7 +376,7 @@ def apply_lash_effect(
             thickness = base_thickness + random.randint(-1, 1)
             thickness = max(1, thickness)
             
-            color = random.choice(lash_colors)
+            lash_color = random.choice(lash_colors)
             
             draw_curved_lash(
                 draw,
@@ -277,33 +385,40 @@ def apply_lash_effect(
                 lash_angle,
                 curl_factor,
                 thickness,
-                color
+                lash_color
             )
             
-            if volume_num >= 3 and random.random() < 0.6:
-                offset_x = random.randint(-1, 1)
-                offset_y = random.randint(-1, 1)
-                angle_var = random.uniform(-3, 3)
-                
-                draw_curved_lash(
-                    draw,
-                    x + offset_x, y + offset_y,
-                    lash_length * 0.95,
-                    lash_angle + angle_var,
-                    curl_factor * 0.9,
-                    max(1, thickness - 1),
-                    (color[0], color[1], color[2], int(color[3] * 0.7))
-                )
+            if volume_num >= 3:
+                num_extra = min(volume_num - 2, 3)
+                for _ in range(num_extra):
+                    if random.random() < 0.65:
+                        offset_x = random.randint(-2, 2)
+                        offset_y = random.randint(-1, 1)
+                        angle_var = random.uniform(-4, 4)
+                        length_var = random.uniform(0.85, 1.0)
+                        
+                        extra_color = random.choice(lash_colors)
+                        extra_color = (extra_color[0], extra_color[1], extra_color[2], int(extra_color[3] * 0.75))
+                        
+                        draw_curved_lash(
+                            draw,
+                            x + offset_x, y + offset_y,
+                            lash_length * length_var,
+                            lash_angle + angle_var,
+                            curl_factor * 0.95,
+                            max(1, thickness - 1),
+                            extra_color
+                        )
     
-    overlay_blurred = overlay.filter(ImageFilter.GaussianBlur(radius=0.3))
+    overlay_blurred = overlay.filter(ImageFilter.GaussianBlur(radius=0.4))
     
     result = image.convert('RGBA')
     result = Image.alpha_composite(result, overlay_blurred)
     
     enhancer = ImageEnhance.Contrast(result)
-    result = enhancer.enhance(1.03)
+    result = enhancer.enhance(1.04)
     
     enhancer = ImageEnhance.Sharpness(result)
-    result = enhancer.enhance(1.08)
+    result = enhancer.enhance(1.1)
     
     return result.convert('RGB')
