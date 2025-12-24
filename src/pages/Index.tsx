@@ -1,14 +1,348 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Icon from '@/components/ui/icon';
+import { toast } from 'sonner';
 
-const Index = () => {
+interface LashEffect {
+  id: string;
+  name: string;
+  description: string;
+  preview: string;
+}
+
+interface LashParams {
+  volume: string;
+  curl: string;
+  length: number;
+}
+
+const lashEffects: LashEffect[] = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    description: 'Натуральный эффект, одна ресничка к одной',
+    preview: '👁️'
+  },
+  {
+    id: 'volume',
+    name: 'Volume',
+    description: 'Объемный эффект для выразительности',
+    preview: '✨'
+  },
+  {
+    id: 'mega',
+    name: 'Mega Volume',
+    description: 'Максимальная пышность и драма',
+    preview: '💫'
+  },
+  {
+    id: 'hollywood',
+    name: 'Hollywood',
+    description: 'Гламурный эффект с максимальной длиной',
+    preview: '⭐'
+  },
+  {
+    id: 'cat-eye',
+    name: 'Cat Eye',
+    description: 'Удлинение к внешнему уголку',
+    preview: '😼'
+  },
+  {
+    id: 'doll',
+    name: 'Doll Eye',
+    description: 'Кукольный эффект с акцентом на центр',
+    preview: '🎀'
+  }
+];
+
+const volumes = ['2D', '3D', '4D', '5D', '6D'];
+const curls = ['C', 'D', 'L', 'M'];
+
+export default function Index() {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [selectedEffect, setSelectedEffect] = useState<string>('classic');
+  const [params, setParams] = useState<LashParams>({
+    volume: '3D',
+    curl: 'D',
+    length: 10
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileUpload = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target?.result as string);
+        toast.success('Фото загружено успешно! 📸');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast.error('Пожалуйста, загрузите изображение');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFileUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 color-black text-black">Добро пожаловать!</h1>
-        <p className="text-xl text-gray-600">тут будет отображаться ваш проект</p>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12 animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-pink-500 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+            Lash Studio AI
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Виртуальная примерка наращивания ресниц с технологией искусственного интеллекта
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up">
+            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+              <Icon name="Upload" className="text-primary" />
+              Загрузите фото глаз
+            </h2>
+            
+            {!uploadedImage ? (
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`border-3 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+                  isDragging 
+                    ? 'border-primary bg-primary/5 scale-105' 
+                    : 'border-gray-300 hover:border-primary/50'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
+                    <Icon name="Image" size={40} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium mb-2">
+                      Перетащите фото сюда
+                    </p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      или нажмите кнопку ниже
+                    </p>
+                  </div>
+                  <label htmlFor="file-upload">
+                    <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
+                      <Icon name="Upload" className="mr-2" size={20} />
+                      Выбрать фото
+                    </Button>
+                  </label>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                  <img 
+                    src={uploadedImage} 
+                    alt="Uploaded eye" 
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                  <Badge className="absolute top-4 right-4 bg-white/90 text-primary">
+                    <Icon name="Sparkles" size={16} className="mr-1" />
+                    AI Ready
+                  </Badge>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setUploadedImage(null)}
+                >
+                  <Icon name="RefreshCw" className="mr-2" size={20} />
+                  Загрузить другое фото
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+              <Icon name="Sparkles" className="text-primary" />
+              Параметры наращивания
+            </h2>
+
+            <Tabs defaultValue="volume" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="volume">Объем</TabsTrigger>
+                <TabsTrigger value="curl">Изгиб</TabsTrigger>
+                <TabsTrigger value="length">Длина</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="volume" className="space-y-4">
+                <div className="grid grid-cols-5 gap-2">
+                  {volumes.map((vol) => (
+                    <Button
+                      key={vol}
+                      variant={params.volume === vol ? 'default' : 'outline'}
+                      className={`transition-all ${
+                        params.volume === vol 
+                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105' 
+                          : 'hover:scale-105'
+                      }`}
+                      onClick={() => setParams({ ...params, volume: vol })}
+                    >
+                      {vol}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-600">
+                  Чем выше объем, тем пышнее будут ресницы
+                </p>
+              </TabsContent>
+
+              <TabsContent value="curl" className="space-y-4">
+                <div className="grid grid-cols-4 gap-2">
+                  {curls.map((curl) => (
+                    <Button
+                      key={curl}
+                      variant={params.curl === curl ? 'default' : 'outline'}
+                      className={`transition-all ${
+                        params.curl === curl 
+                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 scale-105' 
+                          : 'hover:scale-105'
+                      }`}
+                      onClick={() => setParams({ ...params, curl })}
+                    >
+                      {curl}
+                    </Button>
+                  ))}
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p><strong>C</strong> — легкий изгиб</p>
+                  <p><strong>D</strong> — средний изгиб</p>
+                  <p><strong>L</strong> — сильный изгиб</p>
+                  <p><strong>M</strong> — максимальный изгиб</p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="length" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Длина ресниц</span>
+                    <Badge variant="secondary" className="text-lg">
+                      {params.length} мм
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[params.length]}
+                    onValueChange={([value]) => setParams({ ...params, length: value })}
+                    min={6}
+                    max={15}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>6 мм</span>
+                    <span>15 мм</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Оптимальная длина: 10-12 мм для естественного эффекта
+                </p>
+              </TabsContent>
+            </Tabs>
+
+            <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Icon name="Info" className="text-primary mt-1" size={20} />
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium mb-1">Текущие параметры:</p>
+                  <p>Объем: <strong>{params.volume}</strong> • Изгиб: <strong>{params.curl}</strong> • Длина: <strong>{params.length} мм</strong></p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <Card className="p-6 backdrop-blur-sm bg-white/80 shadow-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+            <Icon name="Wand2" className="text-primary" />
+            Каталог эффектов наращивания
+          </h2>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {lashEffects.map((effect, index) => (
+              <Card
+                key={effect.id}
+                className={`p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 animate-scale-in ${
+                  selectedEffect === effect.id
+                    ? 'ring-2 ring-primary bg-gradient-to-br from-pink-50 to-purple-50'
+                    : 'hover:bg-accent/50'
+                }`}
+                style={{ animationDelay: `${index * 0.05}s` }}
+                onClick={() => {
+                  setSelectedEffect(effect.id);
+                  toast.success(`Выбран эффект: ${effect.name} ✨`);
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-4xl">{effect.preview}</div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">{effect.name}</h3>
+                    <p className="text-sm text-gray-600">{effect.description}</p>
+                  </div>
+                  {selectedEffect === effect.id && (
+                    <Icon name="Check" className="text-primary" size={24} />
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </Card>
+
+        {uploadedImage && (
+          <div className="mt-8 flex justify-center gap-4 animate-fade-in">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg"
+              onClick={() => toast.success('Результат сохранен! 💾')}
+            >
+              <Icon name="Save" className="mr-2" />
+              Сохранить результат
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => toast.info('Открываю режим сравнения 🔄')}
+            >
+              <Icon name="ArrowLeftRight" className="mr-2" />
+              Сравнить варианты
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Index;
+}
