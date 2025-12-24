@@ -64,6 +64,7 @@ const curls = ['C', 'D', 'L', 'M'];
 
 export default function Index() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [selectedEffect, setSelectedEffect] = useState<string>('classic');
   const [params, setParams] = useState<LashParams>({
     volume: '3D',
@@ -71,6 +72,7 @@ export default function Index() {
     length: 10
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileUpload = (file: File) => {
     if (file && file.type.startsWith('image/')) {
@@ -99,6 +101,45 @@ export default function Index() {
 
   const handleDragLeave = () => {
     setIsDragging(false);
+  };
+
+  const processImageWithAI = async () => {
+    if (!uploadedImage) {
+      toast.error('Сначала загрузите фото');
+      return;
+    }
+
+    setIsProcessing(true);
+    toast.loading('ИИ обрабатывает ваше фото...', { id: 'processing' });
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/f3f5fd3a-c6cb-432a-b0e9-b04224164a45', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: uploadedImage,
+          effect: selectedEffect,
+          volume: params.volume,
+          curl: params.curl,
+          length: params.length
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setProcessedImage(data.processedImage);
+        toast.success('Эффект наращивания применен! ✨', { id: 'processing' });
+      } else {
+        toast.error('Ошибка обработки', { id: 'processing' });
+      }
+    } catch (error) {
+      toast.error('Не удалось обработать фото', { id: 'processing' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -163,26 +204,64 @@ export default function Index() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="relative rounded-2xl overflow-hidden shadow-lg">
-                  <img 
-                    src={uploadedImage} 
-                    alt="Uploaded eye" 
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-                  <Badge className="absolute top-4 right-4 bg-white/90 text-primary">
-                    <Icon name="Sparkles" size={16} className="mr-1" />
-                    AI Ready
-                  </Badge>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                    <img 
+                      src={uploadedImage} 
+                      alt="Original" 
+                      className="w-full h-auto"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                    <Badge className="absolute top-4 left-4 bg-white/90 text-gray-700">
+                      <Icon name="Image" size={16} className="mr-1" />
+                      Оригинал
+                    </Badge>
+                  </div>
+                  
+                  {processedImage && (
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg animate-fade-in">
+                      <img 
+                        src={processedImage} 
+                        alt="Processed" 
+                        className="w-full h-auto"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                      <Badge className="absolute top-4 left-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                        <Icon name="Sparkles" size={16} className="mr-1" />
+                        С наращиванием
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setUploadedImage(null)}
-                >
-                  <Icon name="RefreshCw" className="mr-2" size={20} />
-                  Загрузить другое фото
-                </Button>
+
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                    onClick={processImageWithAI}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Icon name="Loader2" className="mr-2 animate-spin" size={20} />
+                        Обработка...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Wand2" className="mr-2" size={20} />
+                        Примерить эффект
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setUploadedImage(null);
+                      setProcessedImage(null);
+                    }}
+                  >
+                    <Icon name="RefreshCw" size={20} />
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
@@ -322,23 +401,30 @@ export default function Index() {
           </div>
         </Card>
 
-        {uploadedImage && (
+        {processedImage && (
           <div className="mt-8 flex justify-center gap-4 animate-fade-in">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg"
-              onClick={() => toast.success('Результат сохранен! 💾')}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = processedImage;
+                link.download = `lash-effect-${selectedEffect}.png`;
+                link.click();
+                toast.success('Результат сохранен! 💾');
+              }}
             >
-              <Icon name="Save" className="mr-2" />
-              Сохранить результат
+              <Icon name="Download" className="mr-2" />
+              Скачать результат
             </Button>
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => toast.info('Открываю режим сравнения 🔄')}
+              onClick={processImageWithAI}
+              disabled={isProcessing}
             >
-              <Icon name="ArrowLeftRight" className="mr-2" />
-              Сравнить варианты
+              <Icon name="RefreshCw" className="mr-2" />
+              Пересчитать
             </Button>
           </div>
         )}

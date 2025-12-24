@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Test lash effect processing",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "effect": "volume",
+        "volume": "3D",
+        "curl": "D",
+        "length": 10
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "appliedEffect": "volume"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test OPTIONS for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
